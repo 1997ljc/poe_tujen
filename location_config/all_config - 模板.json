@@ -1,0 +1,67 @@
+{
+    "save_price_data": 1,
+    "speed(1-20)": 1,
+    "AlwaysKeep": [
+    "混沌石",
+    "神圣石"
+    ],
+    "AlwaysDrop": [
+    "蜕变石",
+    "磨刀石"
+    ],
+    "artifact": {
+        "Exceptional": {
+            "img_msg": 0,
+            "value": 12
+        },
+        "Grand": {
+            "img_msg": 0,
+            "value": 6
+        },
+        "Greater": {
+            "img_msg": 0,
+            "value": 2
+        },
+        "Lesser": {
+            "img_msg": 0,
+            "value": 2
+        },
+        "Background": {
+            "img_msg": 0
+        }
+    },
+    "position": {
+        "left_up": {
+            "x": 447,
+            "y": 384
+        },
+        "second_right_down": {
+            "x": 519,
+            "y": 1086
+        },
+        "confirm_button": {
+            "x": 836,
+            "y": 1156
+        },
+        "right_haggle": {
+            "x": 974,
+            "y": 1070
+        },
+        "left_haggle": {
+            "x": 671,
+            "y": 1068
+        },
+        "null_space": {
+            "x": 858,
+            "y": 258
+        },
+        "close_button": {
+            "x": 1058,
+            "y": 281
+        },
+        "coinage_roll": {
+            "x": 1260,
+            "y": 1167
+        }
+    }
+}

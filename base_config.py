@@ -1,8 +1,11 @@
-import tkinter as tk
-import pyautogui
-import tkinter.filedialog as tkf
 import json
+import logging
 import os
+import random
+import tkinter as tk
+import tkinter.filedialog as tkf
+
+import pyautogui
 
 # currency_location left_up_location  right_down_location confirm_location right_path_location left_path_location
 # global currency_location
@@ -66,87 +69,11 @@ def set_location_1(root):
             global left_up_location
             left_up_location = (x1, y1)
 
-            set_location_2(root)
+            # set_location_2(root)
 
     window1.bind("<Key>", check_space)
     window1.focus_force()
 
-
-def set_location_2(root):
-    window2 = tk.Toplevel(root)
-    window2.title("设置位置2")
-    set_window(350, 130, window2, root)
-    label2 = tk.ttk.Label(window2, text="设置第二列右下位置！", style="poe_style.TLabel")
-    label2.pack()
-
-    def check_space(event):
-        if event.keysym == "space":
-            window2.destroy()
-            x2, y2 = pyautogui.position()
-            global right_down_location
-            right_down_location = (x2, y2)
-
-            set_location_3(root)
-
-    window2.bind("<Key>", check_space)
-    window2.focus_force()
-
-
-def set_location_3(root):
-    window3 = tk.Toplevel(root)
-    window3.title("设置位置3")
-    set_window(350, 130, window3, root)
-    label3 = tk.ttk.Label(window3, text="设置<确定键>位置！", style="poe_style.TLabel")
-    label3.pack()
-
-    def check_space(event):
-        if event.keysym == "space":
-            window3.destroy()
-            x3, y3 = pyautogui.position()
-            global confirm_location
-            confirm_location = (x3, y3)
-
-            set_location_4(root)
-
-    window3.bind("<Key>", check_space)
-    window3.focus_force()
-
-def set_location_4(root):
-    window4 = tk.Toplevel(root)
-    window4.title("设置位置4")
-    set_window(350, 130, window4, root)
-    label4 = tk.ttk.Label(window4, text="设置砍价条滑块中间位置！", style="poe_style.TLabel")
-    label4.pack()
-
-    def check_space(event):
-        if event.keysym == "space":
-            window4.destroy()
-            x4, y4 = pyautogui.position()
-            global right_path_location
-            right_path_location = (x4, y4)
-
-            set_location_5(root)
-
-    window4.bind("<Key>", check_space)
-    window4.focus_force()
-
-
-def set_location_5(root):
-    window5 = tk.Toplevel(root)
-    window5.title("设置位置5")
-    set_window(350, 130, window5, root)
-    label5 = tk.ttk.Label(window5, text="设置砍价条左边沿位置！", style="poe_style.TLabel")
-    label5.pack()
-
-    def check_space(event):
-        if event.keysym == "space":
-            window5.destroy()
-            x5, y5 = pyautogui.position()
-            global left_path_location
-            left_path_location = (x5, y5)
-
-    window5.bind("<Key>", check_space)
-    window5.focus_force()
 
 
 def set_speed(root):
@@ -164,6 +91,7 @@ def set_speed(root):
     entry_speed_remind.place(relx=0.5, rely=0.2, anchor="center")  # 设置提示文本
     button_confirm = tk.ttk.Button(show_set_speed_window, text=" \n  确定  \n ", command=lambda: get_run_speed(entry_speed, show_set_speed_window))
     button_confirm.place(relx=0.7, rely=0.75, anchor="center")  # 设置按钮的位置
+
 
 def get_run_speed(entry_speed, show_set_speed_window):
     global global_run_speed
@@ -183,13 +111,6 @@ def get_run_speed(entry_speed, show_set_speed_window):
         # 文本提示
         entry_speed_remind = tk.Label(speed_error_window, text="请输入1-1000的数字！！！！",font=("Courier", 12))
         entry_speed_remind.place(relx=0.5, rely=0.2, anchor="center")  # 设置提示文本
-
-
-# def save_once_config():
-#     once_list = [confirm_location, right_path_location, left_path_location]
-#     with open(".location", "w", encoding="utf-8") as file:
-#         for each in once_list:
-#             file.write(f"{each[0]},{each[1]}")
 
 
 def save_all_config(root):
@@ -260,9 +181,66 @@ def read_all_config(root):
             file_error_label.pack()
 
 
-def set_base_filter(root):
-    base_filter = []
+def attention_window(root, width, height, title ,msg, font_size, destort_root = 0):
+    attention_window = tk.Toplevel(root)
+    attention_window.title(title)
+    set_window(width, height, attention_window, attention_window)
+    attention_window.attributes('-topmost', True)
+    label = tk.Label(attention_window, text=msg, font=("Times New Roman", font_size))
+    label.place(relx=0.5, rely=0.5, anchor="center")
+
+    def root_closing():
+        attention_window.destroy()
+        root.destroy()
+
+    if destort_root == 1:
+        # 绑定窗口关闭事件
+        attention_window.protocol("WM_DELETE_WINDOW", root_closing)
+    return attention_window
 
 
-def set_user_define_filter(root):
-    user_define_filter = []
+def gen_random_time(speed):
+    return float(0.03 * speed + 0.0015 * random.randint(1, 50))
+
+
+def gen_random_offset(position, tier=2.0):
+    symbol = random.randint(0,1)
+    if symbol == 0:
+        return_value = float(position + tier*random.random())
+    else:
+        return_value = float(position - tier * random.random())
+
+    return return_value
+
+
+def multi_entry():
+    entry_list = []
+    # 创建主窗口
+    root = tk.Tk()
+    root.title("基础配置")
+    set_window(600, 500, root, root)
+    # 创建 20 个 Label 组件和 20 个输入框，并使用 grid 布局管理器均匀分布
+    for i in range(16):
+        # 创建 Label 组件
+        label = tk.Label(root, text=f"i")
+        label.grid(row=(2 * i) % 16, column=(2 * i) // 16, padx=5, pady=4)
+
+        # 创建输入框，并设置对应的标签
+        entry = tk.Entry(root)
+        entry.grid(row=(2 * i + 1) % 16, column=(2 * i + 1) // 16, padx=5, pady=4)
+        entry.insert(0, f"i")  # 设置默认文本
+        entry.config(fg="gray")  # 设置前景色为白色，背景色为透明
+        entry_list.append(entry)
+
+
+def set_logging_msg():
+    # 设置日志格式
+    logging.basicConfig(filename='output.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    # 重定向标准输出和标准错误输出到日志文件
+    sys.stdout = open('output.log', 'a')
+    sys.stderr = open('output.log', 'a')
+
+    # 打印一些信息到标准输出
+    print("这是一条打印信息到标准输出的消息。")
+
