@@ -160,16 +160,19 @@ def load_config(root):
 
         # 读取所有图片的imread信息存到config中
         for file in os.listdir(image_path):
-            if file.split('.')[1] == 'jpg' and file.split('.')[0] != "temp":
+            if file.split('.')[1] == 'jpg' and file.split('.')[0] != "temp" and file.split('.')[0] != 'full_check':
                 file_name = file.split('.')[0]
                 config['artifact'][file_name]['img_msg'] = cv2.imread(f'{image_path}/{file}')
+    except UnboundLocalError:
+        error_window = base_config.attention_window(root, 300, 300, "加载失败",
+                                                    "请把软件跟两个配置文件夹放在同一层级！！",
+                                                    15, destort_root=0)
 
     except Exception as e:
         print(f"error {e} in function load_config")
         error_window = base_config.attention_window(root, 300, 300, "加载失败",
-                                                    "加载失败，请检查网络\n（国服版不要开飞机）！",
-                                                    15, destort_root=1)
-
+                                                    "加载失败，请重启软件\n（国服版不要开飞机）！\n本次仅可使用<我自己选>",
+                                                    15, destort_root=0)
 
     return config
 
@@ -178,10 +181,11 @@ def get_location():
     global all_config
     try:
         # 找到物品兑换时候出现的框体的位置，进行校准
-        background_location = pyautogui.locateOnScreen(all_config["artifact"]['Background']['img_msg'])
+        background_location = pyautogui.locateOnScreen(all_config["artifact"]['Background']['img_msg'], confidence=0.6)
 
         # 提取 Box 对象的左上角和右下角坐标
         left, top, width, height = background_location
+        print(background_location)
         background_location_list = [int(left), int(top), int(width), int(height)]
 
         all_config["background_location_list"] = background_location_list
@@ -280,10 +284,8 @@ def jugg_it(entry, set_coinage_window):
                     pyautogui.moveTo(gen_random_offset(left_up_x + x_step * x_num),
                                      gen_random_offset(left_up_y + y_step * y_num), gen_random_time(speed))
                     time.sleep(gen_random_time(speed))
-                    # 将剪贴板中的内容取出并赋值给content
-                    pyautogui.hotkey("ctrl", "alt", "c")
+                    pyautogui.hotkey("ctrl", "c")
                     content = pyperclip.paste()
-                    time.sleep(gen_random_time(speed))
                     # debug 打印
                     # print(content)
 
@@ -292,7 +294,7 @@ def jugg_it(entry, set_coinage_window):
                         # 数量判断
                         if '可堆叠通货' in content:
                             item_amount = content[
-                                          (content.find('堆叠数量: ') + len('堆叠数量: ')):content.find("/")].replace(" ", "")
+                                          (content.find('堆叠数量: ') + len('堆叠数量: ')):content.find("/")].replace(" ", "").replace(",", "")
                             item_amount = int(item_amount)
                         else:
                             item_amount = 1
@@ -321,7 +323,7 @@ def jugg_it(entry, set_coinage_window):
                         if always_flag == 0:
                             # 物品判断及其价值判断
                             # price_json数据格式为字典 名称：价格
-                            if '物品类别: 可堆叠通货' in content:
+                            if '物品类别: 可堆叠通货' in content or '物品类别: 可叠加通货' in content:
                                 if "混沌石" in content:
                                     item_name = '混沌石'
                                     item_value = 1
@@ -388,6 +390,10 @@ def jugg_it(entry, set_coinage_window):
                                     item_name = "垃圾宝石"
                                     item_value = 0.00000001
                             elif '物品类别: 深渊珠宝' in content:
+                                # 深渊珠宝需要判别词缀
+                                pyautogui.hotkey("ctrl", "alt", "c")
+                                time.sleep(gen_random_time(speed))
+                                content = pyperclip.paste()
                                 if ('等阶：1' in content) and (
                                         ('最大生命' in content) or ('能量护盾' in content) or ('全域暴击伤害加成' in content)):
                                     item_name = '深渊珠宝'
@@ -422,7 +428,7 @@ def jugg_it(entry, set_coinage_window):
                                 else:
                                     item_name = '裂隙戒指（没用）'
                                     item_value = 0.0000001
-                            elif '物品类别: 异界地图' in content:
+                            elif ('物品类别: 异界地图' in content) or ('物品类别: 地图' in content) and ('物品类别: 地图碎片' not in content):
                                 if "脑层" in content:
                                     item_name = "脑层"
                                     item_value = all_config["price_json"]["脑层"]
@@ -443,6 +449,9 @@ def jugg_it(entry, set_coinage_window):
                                     item_value = 10000
                                 elif '的要塞' in content:
                                     item_name = "希鲁斯守卫地图"
+                                    item_value = 10000
+                                elif "幻境地图" in content:
+                                    item_name = "脑层守卫地图"
                                     item_value = 10000
                                 else:
                                     item_name = "垃圾地图"
@@ -465,7 +474,6 @@ def jugg_it(entry, set_coinage_window):
                                                      "出现未知物品，请保存当前目录下\nterminal日志文件并联系作者", 8, destort_root=1)
 
                 # 按下弹出通货界面，进行对比
-                # pyautogui.moveTo(left_up_x + x_step * x_num, left_up_y + y_step * y_num, gen_random_time(speed))
                 time.sleep(gen_random_time(speed))  # 0.1 --- 0.2
                 pyautogui.click(button="left")
 
@@ -528,16 +536,34 @@ def jugg_it(entry, set_coinage_window):
 
                 # 清除本次判断的物品，方便下一个格子判断是否有东西
                 # TODO： 四格共振器需要解决一下
+                time.sleep(gen_random_time(speed)/2.0)
                 pyperclip.copy("")
 
             # 判断当前面板是否被兑换完毕,或者按下终止键
             if (break_flag == 1) or (finish_flag == 1):
                 # 当上一次面板兑换完之后，需要把finish_flag清零，否则下一次第二列将会直接跳出
                 finish_flag = 0
+                # 此处逻辑为了判断是否是背包满了所以复制的文本为空
+                full_check_thresh = 0.2
+                pyautogui.screenshot('./location_image/full_check.jpg', region=all_config['background_location_list'])
+                full_check_image = cv2.imread('./location_image/full_check.jpg')
+                background_image = cv2.imread('./location_image/Background.jpg')
+                full_check_res = cv2.matchTemplate(image=full_check_image, templ=background_image,
+                                                   method=cv2.TM_CCOEFF_NORMED)
+                full_check_loc = np.where(full_check_res <= full_check_thresh)
+                # 与没有打开兑换的干净面板做对比，如果完全不类似，则说明是包满
+                if len(full_check_loc[0]) > 0:
+                    break_flag =1
+                    print("监测到背包满，或者兑换面板的物品摆放不连续，或按下停止键！")
+                else:
+                    pass
+                # break跳出这次循环,删除中间文件
+                os.remove('./location_image/full_check.jpg')
                 break
 
         # 判断是否有程序终止按键,如果没有的话就重新刷新一下
         if break_flag == 1:
+
             break
         else:
             # 如果是最后一次就不刷新面板了
@@ -626,12 +652,18 @@ def show_position():
 
 
 def tab_changed(event):
+    global add_hotkey_flag_2
     selected_tab = notebook.index(notebook.select())
     if selected_tab == 0:
         root.attributes('-topmost', False)
     elif selected_tab == 1:
+        if add_hotkey_flag_2:
+            kb.remove_hotkey('space')
+
         root.attributes('-topmost', True)
         kb.add_hotkey('space', show_position)
+        add_hotkey_flag_2 = 1
+
 # ==========================get position function==========================
 
 
@@ -656,6 +688,9 @@ speed = int(all_config['speed(1-20)'])
 # 是否已经绑定了单个物品手动拖动滚动条的函数标志，方便后面remove
 global add_hotkey_flag
 add_hotkey_flag = 0
+# 是否已经绑定了获取位置的函数标志（就是切换标签页的时候），方便后面remove
+global add_hotkey_flag_2
+add_hotkey_flag_2 = 0
 
 # 定义窗口的标签风格
 style = tk.ttk.Style()
@@ -674,7 +709,7 @@ notebook.bind("<<NotebookTabChanged>>", tab_changed)
 
 # 标签页1内容如下：
 # 创建提示文本
-label_remind_1 = tk.Label(tab1, text="图金交易小助手v0.5", font=("Courier", 15))
+label_remind_1 = tk.Label(tab1, text="图金交易小助手v0.55", font=("Courier", 15))
 label_remind_1.place(relx=0.5, rely=0.1, anchor="center")  # 设置提示文本
 label_remind_2 = tk.Label(tab1, text="\n\n国服数据来源易刷E-farm\nE-farm在线人数越多,价格越精确\n请多多支持！\n\n", font=("Courier", 10))
 label_remind_2.place(relx=0.5, rely=0.8, anchor="center")  # 设置提示文本
